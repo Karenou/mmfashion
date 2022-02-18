@@ -35,7 +35,7 @@ model = dict(
             size_average=None,
             reduce=None,
             reduction='mean')),
-    pretrained='checkpoint/resnet50.pth')
+    pretrained='checkpoint/Predict/resnet_roi.pth')
 
 pooling = 'RoI'
 
@@ -57,13 +57,14 @@ data = dict(
         img_size=img_size),
     test=dict(
         type=dataset_type,
-        img_path=os.path.join(data_root, 'Img'),
+        img_path="../../Cloth/ClothImage",
         img_file=os.path.join(data_root, 'Anno/test.txt'),
         label_file=os.path.join(data_root, 'Anno/test_attr.txt'),
         cate_file=os.path.join(data_root, 'Anno/test_cate.txt'),
-        bbox_file=os.path.join(data_root, 'Anno/test_bbox.txt'),
-        landmark_file=os.path.join(data_root, 'Anno/test_landmarks.txt'),
+        bbox_file="",
+        landmark_file="",
         attr_cloth_file=os.path.join(data_root, 'Anno/list_attr_cloth.txt'),
+        shorten_csv=os.path.join(data_root, 'Anno/shortenlist.csv'),
         img_size=img_size),
     val=dict(
         type=dataset_type,
@@ -95,13 +96,14 @@ log_config = dict(
 
 start_epoch = 0
 total_epochs = 40
-gpus = dict(train=[0, 1, 2, 3], test=[0, 1])
+gpus = dict(train=[0, 1, 2, 3], test=[0])
 work_dir = 'checkpoint/Predict/resnet/roi'
-print_interval = 20  # interval to print information
-save_interval = 5
+print_interval = 100  # interval to print information
+save_interval = 2000
 init_weights_from = None  # 'checkpoint/Predict/resnet/global/model_best.pth'
-load_from = 'checkpoint/Predict/resnet/attr_pred/latest.pth'
+load_from = 'checkpoint/Predict/resnet_roi.pth'
 resume_from = None
 workflow = [('train', 40)]
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
+output_path='data/Attr_Predict/cloth_attr.csv'
