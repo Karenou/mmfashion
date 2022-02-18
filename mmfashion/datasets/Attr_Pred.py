@@ -1,6 +1,6 @@
 from __future__ import division
 import os
-
+import glob
 import numpy as np
 import torch
 import torch.nn.parallel
@@ -38,8 +38,8 @@ class AttrDataset(Dataset):
         ])
 
         # read img names
-        fp = open(img_file, 'r')
-        self.img_list = [x.strip() for x in fp]
+        fp = glob.glob(img_path + "/*.jpg")
+        self.img_list = [int(x.split("/")[-1].split(".")[0]) for x in fp]
 
         # read attribute labels and category annotations
         self.labels = np.loadtxt(label_file, dtype=np.float32)
@@ -68,7 +68,7 @@ class AttrDataset(Dataset):
 
     def get_basic_item(self, idx):
         img = Image.open(os.path.join(self.img_path,
-                                      self.img_list[idx])).convert('RGB')
+                                      str(self.img_list[idx]) + ".jpg")).convert('RGB')
 
         width, height = img.size
         if self.with_bbox:
@@ -86,8 +86,8 @@ class AttrDataset(Dataset):
         img.thumbnail(self.img_size, Image.ANTIALIAS)
         img = self.transform(img)
 
-        label = torch.from_numpy(self.labels[idx])
-        cate = torch.LongTensor([int(self.categories[idx]) - 1])
+        # label = torch.from_numpy(self.labels[idx])
+        # cate = torch.LongTensor([int(self.categories[idx]) - 1])
 
         landmark = []
         # compute the shiftness
@@ -106,9 +106,10 @@ class AttrDataset(Dataset):
         else:
             # here no landmark will be used, just use zero for initialization
             # (global predictor)
-            landmark = torch.zeros(8)
+            # landmark = torch.zeros(8)
+            landmark = torch.zeros(16).view(1,-1)
 
-        data = {'img': img, 'attr': label, 'cate': cate, 'landmark': landmark}
+        data = {'img_id': self.img_list[idx], 'img': img, 'landmark': landmark}
         return data
 
     def __getitem__(self, idx):
