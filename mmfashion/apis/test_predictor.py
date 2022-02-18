@@ -2,9 +2,11 @@ from __future__ import division
 
 from mmcv.parallel import MMDataParallel
 
-from ..core import AttrCalculator, CateCalculator
+from ..core import AttrPredictor, AttrCalculator, CateCalculator
 from ..datasets import build_dataloader
 from .env import get_root_logger
+import numpy as np
+import pandas as pd
 
 
 def test_predictor(model,
@@ -58,22 +60,34 @@ def _non_dist_test_attr(model, dataset, cfg, validate=False):
     model = MMDataParallel(model, device_ids=cfg.gpus.test).cuda()
     model.eval()
 
-    attr_calculator = AttrCalculator(cfg)
+    attr_predictor = AttrPredictor(cfg.data.test)
+
+    img_ids, prob_preds = None, None
 
     for batch_idx, testdata in enumerate(data_loader):
+        if batch_idx % cfg.print_interval == 0:
+            print("batch %d" % batch_idx)
+
+        img_id = testdata["img_id"].data.cpu().numpy()
         imgs = testdata['img']
         landmark = testdata['landmark']
-        attr = testdata['attr']
 
-        attr_pred = model(imgs, attr, landmark=landmark, return_loss=False)
+        attr_pred = model(imgs, attr=None, landmark=landmark, return_loss=False)
+        prob_pred = attr_predictor.show_prediction(img_id, attr_pred)
 
-        attr_calculator.collect_result(attr_pred, attr)
+        if not img_ids:
+            img_ids = img_id
+            prob_preds = prob_pred
+        else:
+            img_ids = np.concatenate([img_ids, img_id], axis=0)
+            prob_preds = np.concatenate([prob_preds, prob_pred], axis=0)
 
-        if batch_idx % cfg.print_interval == 0:
-            attr_calculator.show_result(batch_idx)
+        if batch_idx % cfg.save_interval == 0:
+            print("save intermediate prediction result")
+            attr_pred.save_prediction(img_ids, prob_preds, cfg.output_path)
 
-    attr_calculator.show_result()
-
+    print("save final prediction result")
+    attr_pred.save_prediction(img_ids, prob_preds, cfg.output_path)
 
 def _non_dist_test_cate_attr(model, dataset, cfg, validate=False):
     data_loader = build_dataloader(

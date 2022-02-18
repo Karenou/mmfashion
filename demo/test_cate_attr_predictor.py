@@ -22,11 +22,11 @@ def parse_args():
         '--checkpoint',
         type=str,
         help='checkpoint file',
-        default='checkpoint/CateAttrPredict/resnet/global/epoch_40.pth')
+        default='checkpoint/CateAttrPredict/vgg_lm.pth')
     parser.add_argument(
         '--config',
         help='test config file path',
-        default='configs/category_attribute_predict/global_predictor_resnet.py'
+        default='configs/category_attribute_predict/global_predictor_vgg.py'
     )
     parser.add_argument(
         '--use_cuda', type=bool, default=True, help='use gpu or not')
@@ -56,10 +56,10 @@ def main():
     attr_prob, cate_prob = model(
         img_tensor, attr=None, landmark=landmark_tensor, return_loss=False)
     attr_predictor = AttrPredictor(cfg.data.test)
-    cate_predictor = CatePredictor(cfg.data.test)
+    # cate_predictor = CatePredictor(cfg.data.test)
 
     attr_predictor.show_prediction(attr_prob)
-    cate_predictor.show_prediction(cate_prob)
+    # cate_predictor.show_prediction(cate_prob)
 
 
 if __name__ == '__main__':
